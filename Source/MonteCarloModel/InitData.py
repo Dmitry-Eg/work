@@ -27,8 +27,8 @@ def initData(ax):
         #V = [(v + (b-B[-1])*(V[0]-V[-1])/(B[-1]-B[0])) for b, v in zip(B,V)] # Вычитание линейного тренда
         B = B[start:end]
         V = V[start:end]
-        #V = V - V[0]
         #V = V - (V[0]-V[-1])/(B[0]-B[-1]) *B    # Снова вычитание линейного тренда (уже в выделенной части)
-        ax.set_xlim(2.5,10)
         ax.plot((-6*49)/(B*1000), V, '.')
+        if name == 'Last_I15-3_U16-4_Non-local_T100':
+            return ((-6*49)/(B*1000), V)
         #ax.plot(B, V, '.')  
