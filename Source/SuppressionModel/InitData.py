@@ -18,7 +18,7 @@ e = 1.6e-19 # заряд электрона
 
 def initData(ax):
     #ax.set_ylim(0,2.5)
-    pathOfData = 'D:\\Work\\Lab\\Source\\SuppressionModel\\TempData\\' # Путь до файлов с экспериментальными данными
+    pathOfData = 'D:\\Lab\\work\\Source\\SuppressionModel\TempData\\' # Путь до файлов с экспериментальными данными
     print(listdir(pathOfData))
     onlyfiles = [f for f in listdir(pathOfData) if isfile(join(pathOfData, f))] # Получение имен файлов
     # Отрисовка экспериментальных данных

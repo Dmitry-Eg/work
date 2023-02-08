@@ -20,17 +20,16 @@ N = 20000
 countOfPoints = 30
 dcArray = np.linspace(3, 10, countOfPoints)
 rArray = dcArray/2 
-k = 2000
 fig, ax = pypl.subplots()
-ax.set_xlim(-9,9)
+ax.set_xlim(-9,-2)
 lowestTempDc, lowestTempV = InitData.initData(ax)
 ax.set_ylim(-5e-6,9e-6)
 Temperatures = [1.66, 8, 10, 15, 20, 30, 35, 40, 50, 60, 80, 100]
 Lee1 = 2200
 ax.grid(True)
-for t in range(1, len(Temperatures)):
+for t in range(0, len(Temperatures)):
     suppressedDc = lowestTempDc
     suppressedV = lowestTempV * np.exp(-np.pi*np.abs(suppressedDc) * Temperatures[t]**2 / (2*Lee1))
-    ax.plot(suppressedDc, suppressedV, '--')
+    ax.plot(suppressedDc, suppressedV)
 
 pypl.show()
