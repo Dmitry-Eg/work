@@ -11,7 +11,7 @@ import random
 
 random.seed(version=2)
 
-hPlanck = 6.62607015e-34 / (2*np.pi) # концентрация
+hPlanck = 6.62607015e-34 / (2*np.pi) # постоянная планка
 n = 7e15 # концентрация 
 e = 1.6e-19 # заряд электрона
 
