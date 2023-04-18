@@ -18,12 +18,12 @@ e = 1.6e-19 # заряд электрона
 
 def initData(ax):
     #ax.set_ylim(0,2.5)
-    pathOfData = 'D:\\Lab\\work\\Source\\SuppressionModel\TempData\\' # Путь до файлов с экспериментальными данными
+    pathOfData = 'D:\\work\\Lab\\Source\\SuppressionModel\\TempData\\' # Путь до файлов с экспериментальными данными
     print(listdir(pathOfData))
     onlyfiles = [f for f in listdir(pathOfData) if isfile(join(pathOfData, f))] # Получение имен файлов
     # Отрисовка экспериментальных данных
     lowestTemp = (0, 0)
-    Temperatures = [1.66, 8, 10, 15, 20, 30, 35, 40, 50, 60, 80, 100]
+    Temperatures = [1.66, 4.2, 7, 10, 15, 20, 25, 30, 35, 40, 50, 60, 80]
     index = 0
     for name in onlyfiles:
         f = open(pathOfData+name, 'r')
@@ -41,7 +41,7 @@ def initData(ax):
         dc = (1e6)*2*np.sqrt(2*np.pi*n)*hPlanck/(e*B_filtered)
         ax.plot(dc, V_filtered )#, '.')
 
-        if name == 'I15-3_U16-4_Non-local_T1,66':
+        if name == 'I15-2_U16-1_Cross_T1,66':
             lowestTemp = ((1e6)*2*np.sqrt(2*np.pi*n)*hPlanck/(e*B), V)
             #ax.plot((1e6)*2*np.sqrt(2*np.pi*n)*hPlanck/(e*B), V, '.')
         index+=1
