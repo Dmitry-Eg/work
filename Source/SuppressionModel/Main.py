@@ -21,7 +21,7 @@ countOfPoints = 30
 dcArray = np.linspace(3, 10, countOfPoints)
 rArray = dcArray/2 
 fig, ax = pypl.subplots()
-ax.set_xlim(0,7)
+ax.set_xlim(0,10)
 lowestTempDc, lowestTempV = InitData.initData(ax)
 ax.set_ylim(-1e-5,2e-5)
 Temperatures = [1.66, 4.2, 7, 10, 15, 20, 25, 30, 35, 40, 50, 60, 80]
