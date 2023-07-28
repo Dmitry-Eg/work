@@ -22,7 +22,7 @@ def initData(ax):
     onlyfiles = [f for f in listdir(pathOfData) if isfile(join(pathOfData, f))] # Получение имен файлов
     # Отрисовка экспериментальных данных
     lowestTemp = (0, 0)
-    Temperatures = [1.66, 4.2, 7, 10, 15, 20, 25, 30, 35]
+    Temperatures = [10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 32.5, 35, 37.5, 40]
     index = 0
     for name in onlyfiles:
         f = open(pathOfData+name, 'r')
@@ -41,7 +41,7 @@ def initData(ax):
         #V = V - (V[0]-V[-1])/(B[0]-B[-1]) *B    # Снова вычитание линейного тренда (уже в выделенной части)
         dc = (1e6)*2*np.sqrt(2*np.pi*n)*hPlanck/(e*B_filtered)
         ax.plot(dc, V_filtered)#, '.')
-        if name == 'Non-Local_I3-15_U2-16_T01,6':
+        if name == 'I2-1_U3-15_Non_LocalT10':
             lowestTemp = ((1e6)*2*np.sqrt(2*np.pi*n)*hPlanck/(e*B), V)
             #ax.plot((1e6)*2*np.sqrt(2*np.pi*n)*hPlanck/(e*B), V, '.')
         index+=1
