@@ -5,17 +5,30 @@ import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5 import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-from os import listdir
-from os.path import isfile, join
+from os import listdir, remove
+from os.path import isfile, join, dirname
 # pip install pyqt5
 from PyQt5.QtWidgets import QApplication, QLineEdit, QSizePolicy, QComboBox, QWidget, QMainWindow, QMenu, QVBoxLayout, QSpinBox, QTableWidget, QTableWidgetItem, QPushButton, QHBoxLayout, QFileDialog, QMessageBox
 from PyQt5.QtCore import Qt
 from scipy.interpolate import CubicSpline, interp1d
 from scipy.stats import linregress
+import glob
+
 
 hPlanck = 6.62607015e-34 / (2*np.pi) # постоянная планка
 n = 7e15 # концентрация 
 e = 1.6e-19 # заряд электрона
+
+def tempChecker(name):
+    sym = 1
+    temp = ''
+    while name[-sym] != 'T':
+        if name[-sym] != ',':
+            temp +=name[-sym]
+        else:
+            temp+='.'
+        sym+=1
+    return float(temp[::-1])
 
 class MyMplCanvas(FigureCanvas):
     def __init__(self, parent=None, width=10, height=7, dpi=200):
@@ -43,13 +56,29 @@ class MyStaticMplCanvas(MyMplCanvas):
             B = B[start:end]
             V = V[start:end]
             #V = V - V[np.argmin(np.abs(B))]
-            B_filtered = B[B > 0]
-            V_filtered = V[B > 0]
+            B_filtered = B#[B > 0]
+            V_filtered = V#[B > 0]
             dc = (1e6)*2*np.sqrt(2*np.pi*n)*hPlanck/(e*B_filtered)
             self.axes.plot(dc, V_filtered)#, '.')
-        self.axes.set_xlim(0, 10)
+        self.axes.set_xlim(-10, 10)
         self.draw()
-            
+    
+    def suppressCurve(self, files, path, curveName, temps, Lee1):
+        self.update_figure(files, path)
+        f = open(path + '/' + curveName, 'r')
+        data = np.loadtxt(f, delimiter = '\t', usecols=(0,1))
+        B = data[:, 0]
+        V = data[:, 1]
+        B_filtered = B[B > 0]
+        V_filtered = V[B > 0]
+        dc = (1e6)*2*np.sqrt(2*np.pi*n)*hPlanck/(e*B_filtered)
+        for t in temps:
+            print(Lee1/t**2)
+            suppressedV = V_filtered * np.exp(-np.pi*np.abs(dc) * (t**2 - tempChecker(curveName)**2) / (2*Lee1))
+            self.axes.plot(dc, suppressedV, 'b', linestyle='dashed')
+        self.draw()
+
+
 class linearGraphCanvas(FigureCanvas):
     def __init__(self, parent=None, width=10, height=7, dpi=200):
         fig = Figure(figsize=(width, height), dpi=dpi)
@@ -97,6 +126,7 @@ class ApplicationWindow(QMainWindow):
         self.file_menu = QMenu('&File', self)
         self.file_menu.addAction('&Open data from...', self.openData)
         self.file_menu.addAction('&Quit', self.close, Qt.CTRL + Qt.Key_Q)
+
         self.menuBar().addMenu(self.file_menu)
         self.files = []
         self.path = ''
@@ -105,7 +135,7 @@ class ApplicationWindow(QMainWindow):
 
         self.headLayout = QHBoxLayout(self.main_widget)
         self.filesManipulationCB = QComboBox(self.main_widget)
-        self.filesManipulationCB.addItems(['Вычесть одну из кривых','Вычесть константу из одной из кривых', 'Найти максимумы в диапазоне'])
+        self.filesManipulationCB.addItems(['Вычесть одну из кривых','Вычесть константу из одной из кривых', 'Найти максимумы в диапазоне', 'Подавление кривой'])
         self.curveMinusCB = QComboBox(self.main_widget)
         self.curveMinusCB.addItems(self.files)
         self.curveMinusBtn = QPushButton(self.main_widget)
@@ -130,15 +160,25 @@ class ApplicationWindow(QMainWindow):
         self.maxSearchEnd.setParent(None)
         self.maxSearchBtn.setParent(None)
 
+        self.suppressionModelCB = QComboBox(self.main_widget)
+        self.suppressionModelCB.addItems(self.files)
+        self.suppressionModelLine = QLineEdit(self.main_widget)
+        self.suppressionModelBtn = QPushButton(self.main_widget)
+
+        self.suppressionModelCB.setParent(None)
+        self.suppressionModelBtn.setParent(None)
+        self.suppressionModelLine.setParent(None)
+
         self.headLayout.addWidget(self.filesManipulationCB)
+
+        sc1 = MyStaticMplCanvas(self.main_widget)
 
         layout.addLayout(self.headLayout)
         self.filesManipulationCB.activated.connect(self.updateHeadPanel)
         self.curveMinusBtn.clicked.connect(self.curveMinus)
         self.constMinusBtn.clicked.connect(self.constMinus)
         self.maxSearchBtn.clicked.connect(self.maxSearch)
-
-        sc1 = MyStaticMplCanvas(self.main_widget)
+        self.suppressionModelBtn.clicked.connect(lambda: sc1.suppressCurve(self.files, self.path, str(self.suppressionModelCB.currentText()), self.temps, float(self.suppressionModelLine.text())))
 
         self.temps = []
 
@@ -181,6 +221,11 @@ class ApplicationWindow(QMainWindow):
             self.headLayout.addWidget(self.maxSearchStart)
             self.headLayout.addWidget(self.maxSearchEnd)
             self.headLayout.addWidget(self.maxSearchBtn)
+        elif str(self.filesManipulationCB.currentText()) == 'Подавление кривой':
+            self.suppressionModelCB.addItems(self.files)
+            self.headLayout.addWidget(self.suppressionModelCB)
+            self.headLayout.addWidget(self.suppressionModelLine)
+            self.headLayout.addWidget(self.suppressionModelBtn)
 
     def getSpline(self, data):
         dataSorted = data[data[:,0].argsort()] #для функции CubicSpline необходим сортированный X (в исходных данных это не всегда так)
@@ -230,26 +275,22 @@ class ApplicationWindow(QMainWindow):
         print('hi')
 
     def openData(self):
-        self.path = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
-        self.files = [f for f in listdir(self.path) if isfile(join(self.path, f))] 
-        response = QMessageBox.question(self,'', "Is the POINT a decimal separator?", QMessageBox.Yes | QMessageBox.No)
-        if response == QMessageBox.No:
-            for name in self.files:
-                openedFile = open(self.path+'/'+name, 'r')
-                filedata = openedFile.read()
-                filedata = filedata.replace(',', '.')
-                with open(self.path+'/'+name, 'w') as file:
-                    file.write(filedata)
+        path = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
+        self.files = [f for f in listdir(path) if isfile(join(path, f))] 
+        response = QMessageBox.question(self,'', "Разделителем является точка?", QMessageBox.Yes | QMessageBox.No)
+        self.path = dirname(__file__) + '\\savedData'
+        filesToDelete = glob.glob(self.path + '\\*')
+        for f in filesToDelete: # очищаем папку
+            remove(f)
         for name in self.files:
-            sym = 1
-            temp = ''
-            while name[-sym] != 'T':
-                if name[-sym] != ',':
-                    temp +=name[-sym]
-                else:
-                    temp+='.'
-                sym+=1
-            self.temps.append(float(temp[::-1]))
+            openedFile = open(path+'/'+name, 'r')
+            filedata = openedFile.read()
+            if response == QMessageBox.No:
+                filedata = filedata.replace(',', '.')
+            with open(self.path+'\\'+name, 'w+') as file:
+                file.write(filedata)
+        for name in self.files:
+            self.temps.append(tempChecker(name))
         
         print(self.temps)
 
