@@ -16,7 +16,7 @@ import glob
 
 
 hPlanck = 6.62607015e-34 / (2*np.pi) # постоянная планка
-n = 7e15 # концентрация 
+n = 7.8e15 # концентрация 
 e = 1.6e-19 # заряд электрона
 
 def tempChecker(name):
@@ -59,8 +59,11 @@ class MyStaticMplCanvas(MyMplCanvas):
             B_filtered = B#[B > 0]
             V_filtered = V#[B > 0]
             dc = (1e6)*2*np.sqrt(2*np.pi*n)*hPlanck/(e*B_filtered)
-            self.axes.plot(dc, V_filtered)#, '.')
+            V_filteredSorted = [x for _,x in sorted(zip(dc,V_filtered))]
+            dc.sort()
+            self.axes.plot(dc, V_filteredSorted)#, '.')
         self.axes.set_xlim(-10, 10)
+        self.axes.set_ylim(-1e-4, 1e-4)
         self.draw()
     
     def suppressCurve(self, files, path, curveName, temps, Lee1):
@@ -98,8 +101,8 @@ class staticLinearGraphCanvas(linearGraphCanvas):
         tempsNp = np.array(temps)
         x = tempsNp**2
         y = np.log(V)
-        x = np.delete(x, len(x) - 1)
-        y = np.delete(y, len(y) - 1)
+        #x = np.delete(x, len(x) - 1)
+        #y = np.delete(y, len(y) - 1)
         if float('-inf') in y:
             index = np.where(y == float('-inf'))[0][0]
             x = np.delete(x, index)
@@ -108,8 +111,8 @@ class staticLinearGraphCanvas(linearGraphCanvas):
         resOfLingress = linregress(x, y)
         linearizedX = np.linspace(min(x), max(x), len(x))
         linearizedY = resOfLingress.intercept + resOfLingress.slope *linearizedX
-        self.axes.plot(linearizedX, linearizedY, color = 'red')
-        print(np.sqrt(-1/resOfLingress.slope))
+        self.axes.plot(linearizedX, linearizedY, color = 'red', linestyle='dashed')
+        print('Value of Tc:', np.sqrt(-1/resOfLingress.slope), 'K')
         self.draw()
         
 class windowForLinear(QWidget):
@@ -258,13 +261,14 @@ class ApplicationWindow(QMainWindow):
             data = np.loadtxt(f, delimiter = '\t', usecols=(0,1))
             B = data[:, 0]
             V = data[:, 1]
-            B_filtered = B[B > 0]
-            V_filtered = V[B > 0]
+            #B_filtered = B[B > 0]
+            #V_filtered = V[B > 0]
+            B_filtered = B
+            V_filtered = V
             dc = (1e6)*2*np.sqrt(2*np.pi*n)*hPlanck/(e*B_filtered)
             start = float(self.maxSearchStart.text())
             end = float(self.maxSearchEnd.text())
             maxes.append(max(V_filtered[[i for i in range(len(dc)) if dc[i] >=start and dc[i]<=end]]))
-            print(max(V_filtered[[i for i in range(len(dc)) if dc[i] >=start and dc[i]<=end]]))
         
         self.sub_window = windowForLinear()
         linGrSc = staticLinearGraphCanvas(self.sub_window)
@@ -272,7 +276,6 @@ class ApplicationWindow(QMainWindow):
         layoutForSubWindow.addWidget(linGrSc)
         linGrSc.update_figure(maxes,self.temps)
         self.sub_window.show()
-        print('hi')
 
     def openData(self):
         path = str(QFileDialog.getExistingDirectory(self, "Select Directory"))
@@ -291,7 +294,8 @@ class ApplicationWindow(QMainWindow):
                 file.write(filedata)
         for name in self.files:
             self.temps.append(tempChecker(name))
-        
+        #self.files[self.temps.sort()]
+        #self.temps.sort()
         print(self.temps)
 
 if __name__ == '__main__':
